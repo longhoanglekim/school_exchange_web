@@ -76,47 +76,51 @@ export default function CampaignResultsPage() {
             {results.length === 0 ? (
               <EmptyState message="Chưa có campaign nào để hiển thị kết quả." />
             ) : (
-              <div className="stack">
+              <div className="results-grid">
                 {results.map(({ campaign, stats }) => (
-                  <div key={campaign.id} className="card">
-                    <div className="campaign-hero">
-                      <div className="campaign-cover small-cover">{campaign.cover}</div>
-                      <div className="stack" style={{ padding: '16px 0 0' }}>
-                        <h2>{campaign.name}</h2>
-                        <p className="muted">
-                          {campaign.organizer} · {campaign.start} → {campaign.end}
-                        </p>
-                        <Badge status={campaign.status} label={campaignStatusLabel(campaign.status)} />
-                        {campaign.description && <p>{campaign.description}</p>}
+                  <div key={campaign.id} className="result-card">
+                    {/* ---- header: name + status ---- */}
+                    <div className="result-card-header">
+                      <h3 className="result-card-name">{campaign.name}</h3>
+                      <Badge status={campaign.status} label={campaignStatusLabel(campaign.status)} />
+                    </div>
+
+                    {/* ---- meta line ---- */}
+                    <p className="result-card-meta">
+                      <span>{campaign.organizer}</span>
+                      <span aria-hidden="true">·</span>
+                      <time dateTime={campaign.start}>{campaign.start}</time>
+                      <span aria-hidden="true">→</span>
+                      <time dateTime={campaign.end}>{campaign.end}</time>
+                    </p>
+
+                    {/* ---- description (if any) ---- */}
+                    {campaign.description ? (
+                      <p className="result-card-desc">{campaign.description}</p>
+                    ) : null}
+
+                    {/* ---- stats row ---- */}
+                    <div className="result-card-stats">
+                      <div className="result-stat">
+                        <span className="result-stat-value">{stats.total}</span>
+                        <span className="result-stat-label">Tổng số bài</span>
+                      </div>
+                      <div className="result-stat">
+                        <span className="result-stat-value">{stats.approved}</span>
+                        <span className="result-stat-label">Đã duyệt</span>
+                      </div>
+                      <div className="result-stat">
+                        <span className="result-stat-value">{stats.pending}</span>
+                        <span className="result-stat-label">Chờ duyệt</span>
                       </div>
                     </div>
 
-                    <div className="stats" style={{ marginTop: 16 }}>
-                      <div className="stat">
-                        <span className="value">{stats.total}</span>
-                        <span className="label">Tổng số bài</span>
-                      </div>
-                      <div className="stat">
-                        <span className="value">{stats.approved}</span>
-                        <span className="label">Đã duyệt</span>
-                      </div>
-                      <div className="stat">
-                        <span className="value">{stats.pending}</span>
-                        <span className="label">Chờ duyệt</span>
-                      </div>
-                    </div>
-
-                    <div className="row" style={{ marginTop: 12 }}>
-                      <Link
-                        className="btn secondary"
-                        href={`/member/campaigns/${campaign.id}`}
-                      >
+                    {/* ---- actions ---- */}
+                    <div className="result-card-actions">
+                      <Link className="btn primary btn-sm" href={`/member/campaigns/${campaign.id}`}>
                         Xem chiến dịch
                       </Link>
-                      <Link
-                        className="btn secondary"
-                        href={`/activity-admin/campaign-posts`}
-                      >
+                      <Link className="btn secondary btn-sm" href="/activity-admin/campaign-posts">
                         Xem bài đăng
                       </Link>
                     </div>
