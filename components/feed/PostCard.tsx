@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { formatDate } from '@/lib/utils/formatDate';
+import { isImageUrl } from '@/lib/utils/imageUrl';
 import { money } from '@/lib/utils/money';
 import {
   avatarText,
@@ -32,6 +34,9 @@ function requestActionLabel(post: Post, isOwn: boolean): string {
 
 export function PostCard({ post, isOwn, onRequest, onOpenCampaign }: PostCardProps) {
   const canRequest = !isOwn && post.status === 'Approved';
+  const [imageError, setImageError] = useState(false);
+
+  console.log('[PostCard] id:', post.id, 'icon:', post.icon, 'isImageUrl:', isImageUrl(post.icon));
 
   return (
     <article className={`post-card ${post.campaignId ? 'campaign-post' : ''}`}>
@@ -83,12 +88,13 @@ export function PostCard({ post, isOwn, onRequest, onOpenCampaign }: PostCardPro
       </div>
 
       {/* ---- image ---- */}
-      {post.icon && post.icon.startsWith('data:image/') ? (
+      {isImageUrl(post.icon) && !imageError ? (
         <div className="post-image post-image-real">
           <img
             src={post.icon}
             alt={post.title || 'Ảnh bài đăng'}
             className="post-image-img"
+            onError={() => setImageError(true)}
           />
         </div>
       ) : (

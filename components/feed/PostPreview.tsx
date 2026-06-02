@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import type { Control } from 'react-hook-form';
 
 import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
+import { isImageUrl } from '@/lib/utils/imageUrl';
 import { money } from '@/lib/utils/money';
 import {
   avatarText,
@@ -24,6 +26,7 @@ interface PostPreviewProps {
 
 export function PostPreview({ control, campaigns, imagePreviews }: PostPreviewProps) {
   const watched = useWatch({ control });
+  const [imageError, setImageError] = useState(false);
 
   const title = watched.title ?? '';
   const content = watched.content ?? '';
@@ -39,7 +42,7 @@ export function PostPreview({ control, campaigns, imagePreviews }: PostPreviewPr
   // 3. Fallback to placeholder
   const previewImage =
     (imagePreviews && imagePreviews.length > 0 ? imagePreviews[0] : null) ??
-    (imageName && imageName.startsWith('data:image/') ? imageName : null);
+    (isImageUrl(imageName) ? imageName : null);
 
   const hasContent =
     title.trim().length > 0 ||
@@ -101,12 +104,13 @@ export function PostPreview({ control, campaigns, imagePreviews }: PostPreviewPr
       </div>
 
       {/* ---- image ---- */}
-      {previewImage ? (
+      {previewImage && !imageError ? (
         <div className="post-image post-image-real">
           <img
             src={previewImage}
             alt={title || 'Ảnh xem trước'}
             className="post-image-img"
+            onError={() => setImageError(true)}
           />
         </div>
       ) : (

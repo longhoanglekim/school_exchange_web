@@ -36,10 +36,6 @@ export function PostComposer({
   const { show } = useToast();
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
-  const handlePreviewsChange = useCallback((urls: string[]) => {
-    setImagePreviews(urls);
-  }, []);
-
   const {
     control,
     register,
@@ -60,6 +56,15 @@ export function PostComposer({
     },
   });
 
+  const handlePreviewsChange = useCallback((urls: string[]) => {
+    setImagePreviews(urls);
+    // Set a fake image path via RHF's setValue (bypass UploadField's onChange)
+    const sampleIndex = Math.floor(Math.random() * 5) + 1;
+    const fakePath = `/images/samples/sample-${sampleIndex}.svg`;
+    console.log('[PostComposer] setValue imageName:', fakePath);
+    setValue('imageName', fakePath, { shouldValidate: true });
+  }, [setValue]);
+
   const transactionType = useWatch({ control, name: 'type' });
 
   useEffect(() => {
@@ -70,6 +75,7 @@ export function PostComposer({
 
   const submit = handleSubmit(
     async (values) => {
+      console.log('[PostComposer] submitting imageName:', values.imageName);
       await onSubmit({
         title: values.title,
         content: values.content,

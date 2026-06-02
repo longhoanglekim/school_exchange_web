@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg2)"/>
+  <circle cx="200" cy="120" r="48" fill="rgba(255,255,255,0.2)"/>
+  <g transform="translate(172,92)" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="0" y="4" width="56" height="42" rx="4"/>
+    <circle cx="20" cy="18" r="6"/>
+    <path d="M56 38l-14-12-8 8-14-14-20 18"/>
+  </g>
+  <text x="200" y="200" text-anchor="middle" fill="white" font-family="system-ui,sans-serif" font-size="16" font-weight="600">Product Image 2</text>
+  <text x="200" y="228" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="system-ui,sans-serif" font-size="12">Sample placeholder</text>
+</svg>

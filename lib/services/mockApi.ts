@@ -424,6 +424,7 @@ const mockApiImpl: ApiClient = {
         'Bài đăng mới';
       const price = input.type === 'Sale' ? input.price ?? 0 : 0;
 
+      console.log('[mockApi.createPost] input.imageName:', input.imageName);
       const newProduct: ProductEntity = {
         productId: newProductId(),
         userId: uid,

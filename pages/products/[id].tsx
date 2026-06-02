@@ -14,6 +14,7 @@ import { PageHead } from '@/components/layout/PageHead';
 import { useAuth } from '@/lib/auth-context';
 import { ApiError, mockApi } from '@/lib/services/mockApi';
 import type { Post } from '@/lib/types/post';
+import { isImageUrl } from '@/lib/utils/imageUrl';
 import { money } from '@/lib/utils/money';
 import { useRequireRole } from '@/lib/withRoleGuard';
 import { useToast } from '@/components/common/Toast';
@@ -55,6 +56,7 @@ export default function PostDetailPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [post, setPost] = useState<Post | null>(null);
   const [requestOpen, setRequestOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const postId = useMemo(() => {
     const id = router.query.id;
@@ -151,12 +153,13 @@ export default function PostDetailPage() {
               <p>{post.content || post.description || post.title}</p>
             </div>
 
-            {post.icon && post.icon.startsWith('data:image/') ? (
+            {isImageUrl(post.icon) && !imageError ? (
               <div className="post-image post-image-real">
                 <img
                   src={post.icon}
                   alt={post.title || 'Ảnh bài đăng'}
                   className="post-image-img"
+                  onError={() => setImageError(true)}
                 />
               </div>
             ) : (

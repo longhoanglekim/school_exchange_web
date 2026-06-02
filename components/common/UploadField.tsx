@@ -51,29 +51,19 @@ export const UploadField = forwardRef<HTMLInputElement, UploadFieldProps>(
         // Report preview URLs upward so parent can sync preview panel
         onPreviewsChange?.([previewUrl]);
 
-        // Immediately set a placeholder value so validation passes right away
+        // Emit a fake local image path instead of base64.
+        // The server cannot store large base64 strings; we reference a
+        // pre-bundled SVG placeholder in public/images/samples/ instead.
+        const sampleIndex = Math.floor(Math.random() * 5) + 1;
+        const fakePath = `/images/samples/sample-${sampleIndex}.svg`;
+        console.log('[UploadField] emitting fakePath:', fakePath);
         if (onChange) {
-          const interimEvent = {
-            target: { value: file.name, name: props.name },
+          const event = {
+            target: { value: fakePath, name: props.name },
           } as ChangeEvent<HTMLInputElement>;
-          onChange(interimEvent);
+          onChange(event);
+          console.log('[UploadField] onChange called with:', event.target);
         }
-
-        // Read the actual image data as base64 for persistent storage
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          if (onChange) {
-            const finalEvent = {
-              target: { value: dataUrl, name: props.name },
-            } as ChangeEvent<HTMLInputElement>;
-            onChange(finalEvent);
-          }
-        };
-        reader.onerror = () => {
-          // If reading fails, keep the file-name fallback
-        };
-        reader.readAsDataURL(file);
       },
       [clearPreviews, onChange, onPreviewsChange, props.name],
     );
