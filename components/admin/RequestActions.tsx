@@ -19,7 +19,7 @@ export function RequestActions({
     console.log('[RequestActions] status:', JSON.stringify(request.status), 'type:', request.type);
   }
 
-  if (request.status === 'Pending' || request.status === 'Pending Approval') {
+  if (request.status === 'Pending') {
     return (
       <div className="row" style={{ gap: 8 }}>
         <Button variant="secondary" onClick={() => void onAccept()}>
