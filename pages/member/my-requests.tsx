@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import { RequestActions } from '@/components/admin/RequestActions';
@@ -176,7 +177,15 @@ export default function MyRequestsPage() {
                             <Badge status={request.status} label={requestStatusLabel(request.status)} />
                           </td>
                           <td>{formatDate(request.date)}</td>
-                          <td>—</td>
+                          <td>
+                            {request.type === 'Purchase' && request.status === 'Accepted' ? (
+                              <Link className="btn primary" href={`/member/checkout/${request.id}`} style={{ fontSize: 13, padding: '4px 12px' }}>
+                                Thanh toán
+                              </Link>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
                         </tr>
                       ))
                     )}

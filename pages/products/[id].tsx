@@ -50,13 +50,12 @@ export default function PostDetailPage() {
   const router = useRouter();
   const { session } = useAuth();
   const { show } = useToast();
-  const { isLoading: guardLoading, isAuthorized } = useRequireRole(['member']);
+  const { isLoading: guardLoading, isAuthorized } = useRequireRole(['member', 'system-admin', 'activity-admin']);
 
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [post, setPost] = useState<Post | null>(null);
   const [requestOpen, setRequestOpen] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   const postId = useMemo(() => {
     const id = router.query.id;
@@ -153,18 +152,44 @@ export default function PostDetailPage() {
               <p>{post.content || post.description || post.title}</p>
             </div>
 
-            {isImageUrl(post.icon) && !imageError ? (
-              <div className="post-image post-image-real">
-                <img
-                  src={post.icon}
-                  alt={post.title || 'Ảnh bài đăng'}
-                  className="post-image-img"
-                  onError={() => setImageError(true)}
-                />
-              </div>
-            ) : (
-              <div className="post-image" aria-label="Ảnh sản phẩm">
-                <span>{post.icon || 'Chưa có ảnh sản phẩm'}</span>
+            {/* ---- Items list ---- */}
+            {post.items && post.items.length > 0 && (
+              <div className="stack" style={{ gap: 12 }}>
+                {post.items.map((item, i) => (
+                  <div key={i} className="card" style={{ padding: 12, border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      {isImageUrl(item.imageName) ? (
+                        <img
+                          src={item.imageName}
+                          alt={item.name}
+                          style={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 120, height: 90, borderRadius: 8, flexShrink: 0,
+                          background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity={0.4}>
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                          </svg>
+                        </div>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <strong>{item.name}</strong>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4, fontSize: 13 }}>
+                          <span>{item.category}</span>
+                          <Badge
+                            status={item.condition === 'new' ? 'approved' : item.condition === 'old' ? 'rejected' : 'pending-approval'}
+                            label={item.condition === 'new' ? 'Mới' : item.condition === 'used_good' ? 'Tốt' : item.condition === 'used_normal' ? 'Bình thường' : 'Cũ'}
+                          />
+                          {item.price > 0 ? <span className="price-chip">{money(item.price)}</span> : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 

@@ -21,6 +21,7 @@ import type {
   TransactionStats,
   CampaignStatsReport,
 } from '@/lib/types/report';
+import type { CheckoutSession, PaymentResult } from '@/lib/types/payment';
 import {
   ApiError,
   type ApiClient,
@@ -268,12 +269,10 @@ export const httpApi: ApiClient = {
       return post<Post>('/api/posts', {
         title: input.title,
         content: input.content,
-        imageName: input.imageName,
         type: input.type,
-        price: input.price,
-        category: input.category,
         contact: input.contact,
         campaignId: input.campaignId,
+        items: input.items,
       });
     },
 
@@ -281,12 +280,10 @@ export const httpApi: ApiClient = {
       const body: Record<string, unknown> = {};
       if (input.title !== undefined) body.title = input.title;
       if (input.content !== undefined) body.content = input.content;
-      if (input.imageName !== undefined) body.imageName = input.imageName;
       if (input.type !== undefined) body.type = input.type;
-      if (input.price !== undefined) body.price = input.price;
-      if (input.category !== undefined) body.category = input.category;
       if (input.contact !== undefined) body.contact = input.contact;
       if (input.campaignId !== undefined) body.campaignId = input.campaignId;
+      if (input.items !== undefined) body.items = input.items;
       return patch<Post>(`/api/posts/${postId}`, body);
     },
 
@@ -480,6 +477,23 @@ export const httpApi: ApiClient = {
 
     async getCampaignStats() {
       return get<CampaignStatsReport>('/api/admin/reports/campaigns');
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // payments
+  // -------------------------------------------------------------------------
+  payments: {
+    async checkout(requestId: string) {
+      return post<CheckoutSession>(`/api/payments/checkout/${requestId}`);
+    },
+
+    async confirm(requestId: string, paymentMethod: string) {
+      return post<PaymentResult>(`/api/payments/confirm/${requestId}`, { paymentMethod });
+    },
+
+    async getHistory() {
+      return get<PaymentResult[]>('/api/payments/history');
     },
   },
 };

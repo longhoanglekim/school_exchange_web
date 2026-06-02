@@ -33,7 +33,7 @@ const DEFAULT_FILTERS: FeedFiltersValue = {
 };
 
 export default function MemberFeedPage() {
-  const { isLoading: guardLoading, isAuthorized } = useRequireRole(['member']);
+  const { isLoading: guardLoading, isAuthorized } = useRequireRole(['member', 'system-admin', 'activity-admin']);
   const { session } = useAuth();
   const { show } = useToast();
 

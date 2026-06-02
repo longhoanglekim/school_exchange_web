@@ -48,7 +48,7 @@ function isRealImage(icon: string): boolean {
 
 export default function PostManagementPage() {
   const { show } = useToast();
-  const { isLoading: guardLoading, isAuthorized } = useRequireRole(['system-admin']);
+  const { isLoading: guardLoading, isAuthorized } = useRequireRole(['system-admin', 'activity-admin']);
   const [dataStatus, setDataStatus] = useState<LoadStatus>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);

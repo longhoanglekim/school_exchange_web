@@ -24,12 +24,18 @@ function postToFormInput(post: Post): Partial<CreatePostInput> {
   return {
     title: post.title ?? '',
     content: post.content ?? post.description ?? '',
-    category: post.category ?? '',
     type: post.type,
-    price: post.price ?? 0,
-    imageName: '', // Do not pre-fill image — user must re-upload or leave as-is
     contact: post.contact ?? '',
     campaignId: post.campaignId ?? '',
+    items: post.items?.length
+      ? post.items.map((item) => ({
+          name: item.name,
+          category: item.category,
+          price: item.price,
+          condition: item.condition,
+          imageName: item.imageName || '',
+        }))
+      : [{ name: '', category: '', price: 0, condition: 'used_good', imageName: '' }],
   };
 }
 

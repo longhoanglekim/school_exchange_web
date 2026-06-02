@@ -13,32 +13,45 @@ export const loginSchema = z.object({
 });
 
 // ---- Create Post (PostComposer) ----
-// content/category/imageName/contact bắt buộc khác rỗng; title & campaignId tùy chọn.
-// Quy tắc giá: Sale => price >= 0; Exchange/Donation => price bị ép = 0.
+// content/contact bắt buộc; items array 1-3 phần tử; title & campaignId tùy chọn.
+// Quy tắc giá: Sale => price >= 0; Exchange/Donation => price = 0.
+const postItemSchema = z.object({
+  name: z.string().trim().min(1, 'Vui lòng nhập tên sản phẩm.'),
+  category: z.string().trim().min(1, 'Vui lòng chọn danh mục.'),
+  price: z.number(),
+  condition: z.enum(['new', 'used_good', 'used_normal', 'old']),
+  imageName: z.string().trim().default(''),
+});
+
 export const createPostSchema = z
   .object({
     title: z.string().trim().optional(),
     content: z.string().trim().min(1, 'Vui lòng nhập nội dung bài đăng.'),
-    category: z.string().trim().min(1, 'Vui lòng chọn danh mục.'),
     type: z.enum(['Sale', 'Exchange', 'Donation']),
-    price: z.number(),
-    imageName: z.string().trim().min(1, 'Cần ít nhất 1 ảnh.'),
     contact: z.string().trim().min(1, 'Vui lòng nhập thông tin liên hệ.'),
     campaignId: z.string().optional(),
+    items: z.array(postItemSchema).min(1, 'Cần ít nhất 1 sản phẩm.').max(3, 'Tối đa 3 sản phẩm.'),
   })
   .superRefine((data, ctx) => {
-    if (data.type === 'Sale' && data.price < 0) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['price'],
-        message: 'Giá phải lớn hơn hoặc bằng 0.',
+    if (data.type === 'Sale') {
+      data.items.forEach((item, i) => {
+        if (item.price < 0) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['items', i, 'price'],
+            message: 'Giá phải lớn hơn hoặc bằng 0.',
+          });
+        }
       });
     }
   })
   // Exchange/Donation luôn có price = 0 (UI ép giá trước khi submit).
   .transform((data) => ({
     ...data,
-    price: data.type === 'Sale' ? data.price : 0,
+    items: data.items.map((item) => ({
+      ...item,
+      price: data.type === 'Sale' ? item.price : 0,
+    })),
   }));
 
 // ---- Create Campaign (pages/activity-admin/create-campaign.tsx) ----

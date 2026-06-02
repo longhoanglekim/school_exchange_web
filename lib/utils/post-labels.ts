@@ -52,6 +52,7 @@ export function postStatusLabel(status: string): string {
 export function requestStatusLabel(status: string): string {
   const map: Record<string, string> = {
     Pending: 'Đang chờ',
+    'Pending Approval': 'Đang chờ',
     Accepted: 'Đã chấp nhận',
     Rejected: 'Từ chối',
     Completed: 'Hoàn tất',

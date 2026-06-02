@@ -9,13 +9,21 @@ export type PostStatus =
 
 export type OwnerRole = 'Student' | 'Teacher' | 'Member' | 'System Admin' | 'Activity Admin';
 
+export interface PostItem {
+  name: string;
+  category: string;
+  price: number;
+  condition: 'new' | 'used_good' | 'used_normal' | 'old';
+  imageName: string;
+}
+
 export interface Post {
   id: string;                  // ví dụ 'p1', 'p' + Date.now()
   title: string;               // tên món đồ (post title)
   icon: string;                // placeholder ảnh dạng text (∑, BOOK, UNI, POST...)
   type: TransactionType;
   price: number;               // quy tắc giá: Sale >= 0; Exchange/Donation = 0
-  category: string;            // tên Category
+  category: string;            // tên Category (của item đầu tiên, để backward-compat)
   owner: string;               // tên người đăng (khớp ROLE_DISPLAY_NAME)
   ownerRole: OwnerRole;        // Student | Teacher (hiển thị trên PostCard)
   status: PostStatus;
@@ -26,4 +34,5 @@ export interface Post {
   description: string;         // mô tả chi tiết (trang Post Detail)
   contact: string;             // thông tin liên hệ
   reason?: string;             // lý do từ chối, chỉ có khi status = 'Rejected'/'Removed'
+  items: PostItem[];           // danh sách sản phẩm (1-3 items)
 }

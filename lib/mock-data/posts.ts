@@ -18,6 +18,7 @@ export const seedPosts: Post[] = [
     description:
       'Máy tính còn tốt, đủ nắp trượt, phím bấm ổn định, có vài vết xước nhẹ ở mặt sau.',
     contact: 'an@student.school.edu',
+    items: [{ name: 'Máy tính Casio fx-580VN X', category: 'Study electronics', price: 280000, condition: 'used_good' as const, imageName: '∑' }],
   },
   {
     id: 'p2',
@@ -37,6 +38,7 @@ export const seedPosts: Post[] = [
     description:
       'Bộ sách đã bọc bìa, có ghi chú nhẹ ở vài trang, phù hợp cho học sinh mới nhập học.',
     contact: 'mai@school.edu',
+    items: [{ name: 'Bộ sách giáo khoa lớp 10', category: 'Books', price: 0, condition: 'used_normal' as const, imageName: 'BOOK' }],
   },
   {
     id: 'p3',
@@ -53,6 +55,7 @@ export const seedPosts: Post[] = [
       'Mình muốn đổi áo đồng phục size M sang size L. Áo đã giặt sạch, không rách, phù hợp bạn nào cần size M.',
     description: 'Muốn đổi sang size L, áo sạch và không rách.',
     contact: 'an@student.school.edu',
+    items: [{ name: 'Áo đồng phục size M', category: 'Uniforms', price: 0, condition: 'used_good' as const, imageName: 'UNI' }],
   },
   {
     id: 'p4',
@@ -71,6 +74,7 @@ export const seedPosts: Post[] = [
       'Bán lại vợt cầu lông để đóng góp cho Quỹ thể thao mùa hè. Vợt đã thay dây mới, phù hợp cho CLB hoặc giờ thể dục.',
     description: 'Dây mới thay, tay cầm hơi cũ nhưng dùng ổn cho CLB.',
     contact: 'mai@school.edu',
+    items: [{ name: 'Vợt cầu lông Yonex cũ', category: 'Sports equipment', price: 150000, condition: 'used_normal' as const, imageName: 'RKT' }],
   },
   {
     id: 'p5',
@@ -89,6 +93,7 @@ export const seedPosts: Post[] = [
       'Mình muốn đưa đèn LED ba mức sáng vào campaign Góc học tập cho học sinh mới. Đèn còn sáng tốt và phù hợp góc học tập.',
     description: 'Đèn LED ba mức sáng, phù hợp góc học tập.',
     contact: 'an@student.school.edu',
+    items: [{ name: 'Đèn bàn học chống cận', category: 'School supplies', price: 90000, condition: 'used_good' as const, imageName: 'LAMP' }],
   },
   {
     id: 'p6',
@@ -106,5 +111,6 @@ export const seedPosts: Post[] = [
     description: 'Balo còn dùng được, dây kéo cần vệ sinh.',
     contact: 'mai@school.edu',
     reason: 'Ảnh chưa đủ rõ tình trạng sản phẩm.',
+    items: [{ name: 'Ba lô đi học màu xanh', category: 'Other allowed items', price: 0, condition: 'old' as const, imageName: 'BAG' }],
   },
 ];

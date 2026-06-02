@@ -89,6 +89,17 @@ export function toPostView(
   category: CategoryEntity,
   campaign?: CampaignEntity,
 ): Post {
+  // Items are mapped in mockApi (which has DB access for category join).
+  // For entities without pre-mapped items, use an empty array.
+  const rawItems = product.items || [];
+  const items = rawItems.map((item) => ({
+    name: item.name,
+    category: '', // filled in by mockApi via postToView wrapper
+    price: item.price,
+    condition: item.condition,
+    imageName: item.image,
+  }));
+
   return {
     id: toPostId(product.productId),
     title: product.title,
@@ -106,6 +117,7 @@ export function toPostView(
     description: product.description,
     contact: product.contact,
     reason: product.reason,
+    items,
   };
 }
 

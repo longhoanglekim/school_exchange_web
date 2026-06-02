@@ -14,9 +14,14 @@ export function RequestActions({
   onReject,
   onComplete,
 }: RequestActionsProps) {
-  if (request.status === 'Pending') {
+  // Debug: log the actual status value
+  if (typeof window !== 'undefined') {
+    console.log('[RequestActions] status:', JSON.stringify(request.status), 'type:', request.type);
+  }
+
+  if (request.status === 'Pending' || request.status === 'Pending Approval') {
     return (
-      <div className="row">
+      <div className="row" style={{ gap: 8 }}>
         <Button variant="secondary" onClick={() => void onAccept()}>
           Chấp nhận
         </Button>
@@ -28,6 +33,10 @@ export function RequestActions({
   }
 
   if (request.status === 'Accepted') {
+    // For Purchase: buyer must pay, seller cannot complete directly
+    if (request.type === 'Purchase') {
+      return <span className="small muted">Chờ người mua thanh toán</span>;
+    }
     return (
       <Button variant="primary" onClick={() => void onComplete()}>
         Hoàn tất

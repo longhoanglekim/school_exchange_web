@@ -38,7 +38,7 @@ function displayPrice(post: Post): string {
 export default function PostApprovalPage() {
   const { show } = useToast();
   const { isLoading: guardLoading, isAuthorized } =
-    useRequireRole(['system-admin']);
+    useRequireRole(['system-admin', 'activity-admin']);
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);

@@ -47,6 +47,8 @@ export interface MockDatabase {
 /** Current login session (mock — no real auth). */
 interface SessionState {
   roleKey: RoleKey;
+  /** Explicit user ID override (used when multiple users share the same role). */
+  userId?: number;
 }
 
 /** Root shape persisted to localStorage. */
@@ -60,7 +62,7 @@ interface PersistedState {
 // ============================================================================
 
 /** localStorage key (mirrors SIE_KEY in js/app.js). */
-export const STORE_KEY = 'schoolItemExchangeStateV2';
+export const STORE_KEY = 'schoolItemExchangeStateV4';
 
 /** Legacy key kept for cleanup on reset. */
 const LEGACY_STORE_KEY = 'schoolItemExchangeStateV1';
@@ -160,6 +162,20 @@ export function getRoleKey(): RoleKey {
 export function setRoleKey(roleKey: RoleKey): void {
   const persisted = loadPersistedState();
   persisted.session.roleKey = roleKey;
+  persisted.session.userId = undefined; // clear explicit userId when changing role
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(STORE_KEY, JSON.stringify(persisted));
+  }
+}
+
+/**
+ * Set the session with both role and explicit userId.
+ * Use this when multiple mock users share the same role (e.g., two Members).
+ */
+export function setSession(roleKey: RoleKey, userId: number): void {
+  const persisted = loadPersistedState();
+  persisted.session.roleKey = roleKey;
+  persisted.session.userId = userId;
   if (typeof window !== 'undefined') {
     window.localStorage.setItem(STORE_KEY, JSON.stringify(persisted));
   }
@@ -222,8 +238,18 @@ export function getRoleByKey(db: MockDatabase, roleKey: RoleKey): RoleEntity | u
  * Used for ownership checks and display name resolution.
  */
 export function getCurrentUser(db: MockDatabase): UserEntity | undefined {
-  const roleKey = getRoleKey();
-  const role = db.roles.find((r) => r.roleKey === roleKey);
+  const session = loadPersistedState().session;
+  // Use explicit userId if set (multi-member support)
+  if (session.userId) {
+    return db.users.find((u) => u.userId === session.userId);
+  }
+  // Fallback: first user matching the role
+  const role = db.roles.find((r) => r.roleKey === session.roleKey);
   if (!role) return undefined;
   return db.users.find((u) => u.roleId === role.roleId);
+}
+
+/** Get the current session userId (or undefined if not explicitly set). */
+export function getCurrentUserId(): number | undefined {
+  return loadPersistedState().session.userId;
 }

@@ -201,6 +201,7 @@ const seedProducts: ProductEntity[] = [
     status: 'Approved',
     contact: 'an@student.school.edu',
     createdAt: '2026-05-24',
+    items: [{ name: 'Máy tính Casio fx-580VN X', categoryId: 3, price: 280000, condition: 'used_good' as const, image: '∑' }],
   },
   {
     productId: 2,
@@ -216,6 +217,7 @@ const seedProducts: ProductEntity[] = [
     campaignId: 1, // c1
     contact: 'mai@school.edu',
     createdAt: '2026-05-21',
+    items: [{ name: 'Bộ sách giáo khoa lớp 10', categoryId: 1, price: 0, condition: 'used_normal' as const, image: 'BOOK' }],
   },
   {
     productId: 3,
@@ -230,6 +232,7 @@ const seedProducts: ProductEntity[] = [
     status: 'Approved',
     contact: 'an@student.school.edu',
     createdAt: '2026-05-18',
+    items: [{ name: 'Áo đồng phục size M', categoryId: 2, price: 0, condition: 'used_good' as const, image: 'UNI' }],
   },
   {
     productId: 4,
@@ -245,6 +248,7 @@ const seedProducts: ProductEntity[] = [
     campaignId: 2, // c2
     contact: 'mai@school.edu',
     createdAt: '2026-05-15',
+    items: [{ name: 'Vợt cầu lông Yonex cũ', categoryId: 4, price: 150000, condition: 'used_normal' as const, image: 'RKT' }],
   },
   {
     productId: 5,
@@ -260,6 +264,7 @@ const seedProducts: ProductEntity[] = [
     campaignId: 1, // c1
     contact: 'an@student.school.edu',
     createdAt: '2026-06-01',
+    items: [{ name: 'Đèn bàn học chống cận', categoryId: 5, price: 90000, condition: 'used_good' as const, image: 'LAMP' }],
   },
   {
     productId: 6,
@@ -275,6 +280,7 @@ const seedProducts: ProductEntity[] = [
     reason: 'Ảnh chưa đủ rõ tình trạng sản phẩm.',
     contact: 'mai@school.edu',
     createdAt: '2026-05-10',
+    items: [{ name: 'Ba lô đi học màu xanh', categoryId: 6, price: 0, condition: 'old' as const, image: 'BAG' }],
   },
 ];
 
@@ -288,9 +294,9 @@ const seedRequests: RequestEntity[] = [
     senderId: 1, // Nguyễn Minh An
     receiverId: 4, // Trần Thị Mai
     type: 'Purchase',
-    status: 'Pending',
-    message: '',
-    contact: '',
+    status: 'Accepted',
+    message: 'Tôi muốn mua vợt này',
+    contact: 'an@student.school.edu',
     createdAt: '2026-05-29',
   },
   {
@@ -325,6 +331,17 @@ const seedRequests: RequestEntity[] = [
     message: '',
     contact: '',
     createdAt: '2026-05-31',
+  },
+  {
+    requestId: 5,
+    productId: 1, // Casio (p1) — Sale
+    senderId: 4, // Trần Thị Mai
+    receiverId: 1, // Nguyễn Minh An
+    type: 'Purchase',
+    status: 'Pending',
+    message: 'Tôi muốn mua máy tính này',
+    contact: 'mai@school.edu',
+    createdAt: '2026-06-01',
   },
 ];
 

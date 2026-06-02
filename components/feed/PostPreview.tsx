@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import type { Control } from 'react-hook-form';
 
@@ -12,42 +11,52 @@ import {
   typeBadgeStatus,
   typeLabel,
 } from '@/lib/utils/post-labels';
-import type { CreatePostInput } from '@/lib/types/schemas';
 import type { Campaign } from '@/lib/types/campaign';
 
-// ---- component ----
+const CONDITION_LABELS: Record<string, string> = {
+  new: 'Mới',
+  used_good: 'Tốt',
+  used_normal: 'Bình thường',
+  old: 'Cũ',
+};
 
-interface PostPreviewProps {
-  control: Control<CreatePostInput>;
-  campaigns: Campaign[];
-  /** Object URLs from UploadField for immediate preview before base64 read completes. */
-  imagePreviews?: string[];
+// Inline item type matching form schema output
+interface PreviewItem {
+  name: string;
+  category: string;
+  price: number;
+  condition: string;
+  imageName?: string;
 }
 
-export function PostPreview({ control, campaigns, imagePreviews }: PostPreviewProps) {
+interface PostPreviewProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  control: Control<any>;
+  campaigns: Campaign[];
+  /** Current items from form state (via useWatch). */
+  items?: PreviewItem[];
+}
+
+export function PostPreview({ control, campaigns, items }: PostPreviewProps) {
   const watched = useWatch({ control });
-  const [imageError, setImageError] = useState(false);
 
-  const title = watched.title ?? '';
-  const content = watched.content ?? '';
-  const type = watched.type ?? 'Sale';
-  const price = watched.price;
-  const category = watched.category ?? '';
-  const campaignId = watched.campaignId ?? '';
-  const imageName = watched.imageName ?? '';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const title: string = (watched as any).title ?? '';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const content: string = (watched as any).content ?? '';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const type: string = (watched as any).type ?? 'Sale';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const campaignId: string = (watched as any).campaignId ?? '';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const contact: string = (watched as any).contact ?? '';
 
-  // Resolve the best image source:
-  // 1. Object URL from UploadField (instant preview)
-  // 2. data:image/... from form state (base64 after FileReader completes)
-  // 3. Fallback to placeholder
-  const previewImage =
-    (imagePreviews && imagePreviews.length > 0 ? imagePreviews[0] : null) ??
-    (isImageUrl(imageName) ? imageName : null);
+  const displayItems = items && items.length > 0 ? items : [];
 
   const hasContent =
     title.trim().length > 0 ||
     content.trim().length > 0 ||
-    category.length > 0;
+    displayItems.some((item) => item.name.trim().length > 0);
 
   const selectedCampaign = campaignId
     ? campaigns.find((c) => c.id === campaignId)
@@ -70,7 +79,7 @@ export function PostPreview({ control, campaigns, imagePreviews }: PostPreviewPr
       {/* ---- pending badge ---- */}
       <Badge status="pending-approval" label="Chờ duyệt" />
 
-      {/* ---- header: avatar + name + date + kind badge ---- */}
+      {/* ---- header ---- */}
       <header className="post-header">
         <div className="avatar post-avatar">{avatarText('Bạn')}</div>
         <div className="post-author">
@@ -82,7 +91,7 @@ export function PostPreview({ control, campaigns, imagePreviews }: PostPreviewPr
         </span>
       </header>
 
-      {/* ---- campaign tag (if any) ---- */}
+      {/* ---- campaign tag ---- */}
       {selectedCampaign ? (
         <div className="campaign-tag">
           <span>Chiến dịch</span>
@@ -103,51 +112,55 @@ export function PostPreview({ control, campaigns, imagePreviews }: PostPreviewPr
         </p>
       </div>
 
-      {/* ---- image ---- */}
-      {previewImage && !imageError ? (
-        <div className="post-image post-image-real">
-          <img
-            src={previewImage}
-            alt={title || 'Ảnh xem trước'}
-            className="post-image-img"
-            onError={() => setImageError(true)}
-          />
-        </div>
-      ) : (
-        <div className="post-image" aria-label="Ảnh sản phẩm">
-          <span className="post-image-placeholder">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            <span>Chưa có ảnh sản phẩm</span>
-          </span>
-        </div>
-      )}
+      {/* ---- items list ---- */}
+      <div className="stack" style={{ gap: 12 }}>
+        {displayItems.map((item, i) => (
+          <div key={i} className="card" style={{ padding: 10, border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              {/* item image */}
+              {isImageUrl(item.imageName) ? (
+                <img
+                  src={item.imageName}
+                  alt={item.name || `Sản phẩm ${i + 1}`}
+                  style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 80, height: 60, borderRadius: 6, flexShrink: 0,
+                    background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity={0.4}>
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                </div>
+              )}
+              {/* item info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <strong style={{ fontSize: 14 }}>{item.name || `Sản phẩm ${i + 1}`}</strong>
+                <div className="post-meta-row" style={{ marginTop: 4, gap: 6, flexWrap: 'wrap' }}>
+                  {item.category ? <span className="post-category">{categoryLabelVi(item.category)}</span> : null}
+                  <Badge
+                    status={item.condition === 'new' ? 'approved' : item.condition === 'old' ? 'rejected' : 'pending-approval'}
+                    label={CONDITION_LABELS[item.condition] || item.condition}
+                  />
+                  {type === 'Sale' && item.price > 0 ? (
+                    <span className="price-chip">{money(item.price)}</span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      {/* ---- metadata: type badge + price + category ---- */}
-      <div className="post-meta-row">
+      {/* ---- metadata ---- */}
+      <div className="post-meta-row" style={{ marginTop: 12 }}>
         <Badge status={typeBadgeStatus(type)} label={typeLabel(type)} />
-        {type === 'Sale' && price !== undefined ? (
-          <span className="price-chip">{money(price)}</span>
-        ) : null}
-        {type === 'Exchange' && price !== undefined && price > 0 ? (
-          <span className="price-chip">{money(price)}</span>
-        ) : null}
-        {category ? (
-          <span className="post-category">{categoryLabelVi(category)}</span>
-        ) : null}
+        {contact ? <span className="post-category">{contact}</span> : null}
       </div>
 
       {/* ---- actions (disabled preview) ---- */}

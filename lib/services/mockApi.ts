@@ -46,17 +46,20 @@ import type { CampaignEntity } from '@/lib/entities/campaign';
 import type { RequestEntity } from '@/lib/entities/request';
 import type { TransactionEntity } from '@/lib/entities/transaction';
 import type { FeeEntity } from '@/lib/entities/fee';
+import type { CheckoutSession, PaymentResult } from '@/lib/types/payment';
 import {
   getDatabase,
   updateDatabase,
   getRoleKey,
   setRoleKey,
+  setSession,
   getUserById,
   getCategoryById,
   getProductById,
   getCampaignById,
   getCategoryByName,
   getCurrentUser,
+  getCurrentUserId,
 } from '@/lib/services/mockStore';
 import type { MockDatabase } from '@/lib/services/mockStore';
 import {
@@ -72,6 +75,7 @@ import {
   toProductId,
   toEntityCampaignId,
   toEntityRequestId,
+  toRequestId,
   newProductId,
   newRequestId,
   newTransactionId,
@@ -182,7 +186,19 @@ function postToView(db: MockDatabase, product: ProductEntity): Post {
   const category = getCategoryById(db, product.categoryId);
   if (!category) throw new ApiError('NOT_FOUND', `Không tìm thấy danh mục: ${product.categoryId}`);
   const campaign = product.campaignId ? getCampaignById(db, product.campaignId) : undefined;
-  return toPostView(product, user, category, campaign);
+  const post = toPostView(product, user, category, campaign);
+  // Fill in item category names (mapper leaves them empty)
+  post.items = (product.items || []).map((item) => {
+    const itemCat = getCategoryById(db, item.categoryId);
+    return {
+      name: item.name,
+      category: itemCat?.categoryName ?? '',
+      price: item.price,
+      condition: item.condition,
+      imageName: item.image,
+    };
+  });
+  return post;
 }
 
 /** Map a list of products to UI Posts (with joins). */
@@ -255,12 +271,13 @@ const mockApiImpl: ApiClient = {
       console.log('[mockApi.login] input:', { email, isAdmin, passwordMatches: password === 'school123' });
       // Map demo credentials to roleKey for mock mode.
       // Admin login sends username; member login sends email.
-      const CREDENTIALS: { login: string; roleKey: RoleKey; isAdmin: boolean }[] = [
-        { login: 'an@student.school.edu', roleKey: 'member', isAdmin: false },
-        { login: 'huyle',                roleKey: 'system-admin', isAdmin: true },
-        { login: 'huy@school.edu',       roleKey: 'system-admin', isAdmin: false },
-        { login: 'greenlife',            roleKey: 'activity-admin', isAdmin: true },
-        { login: 'greenlife@school.edu', roleKey: 'activity-admin', isAdmin: false },
+      const CREDENTIALS: { login: string; roleKey: RoleKey; isAdmin: boolean; userId?: number }[] = [
+        { login: 'an@student.school.edu',  roleKey: 'member', isAdmin: false, userId: 1 },
+        { login: 'mai@student.school.edu', roleKey: 'member', isAdmin: false, userId: 4 },
+        { login: 'huyle',                  roleKey: 'system-admin', isAdmin: true },
+        { login: 'huy@school.edu',         roleKey: 'system-admin', isAdmin: false },
+        { login: 'greenlife',              roleKey: 'activity-admin', isAdmin: true },
+        { login: 'greenlife@school.edu',   roleKey: 'activity-admin', isAdmin: false },
       ];
       const match = CREDENTIALS.find(
         (c) => c.login === email.toLowerCase() && c.isAdmin === Boolean(isAdmin),
@@ -269,8 +286,22 @@ const mockApiImpl: ApiClient = {
       if (!match || password !== 'school123') {
         throw new ApiError('INVALID_CREDENTIALS', 'Thông tin đăng nhập không chính xác.');
       }
-      setRoleKey(match.roleKey);
-      const session = sessionFor(match.roleKey);
+      if (match.userId) {
+        setSession(match.roleKey, match.userId);
+      } else {
+        setRoleKey(match.roleKey);
+      }
+      // Build session from actual user data
+      const db = getDatabase();
+      const user = getCurrentUser(db);
+      const session: Session = {
+        roleKey: match.roleKey,
+        role: ROLE_LABEL[match.roleKey],
+        userName: user?.fullName || ROLE_DISPLAY_NAME[match.roleKey],
+        token: 'mock-token',
+        id: String(user?.userId || ''),
+        email: user?.email || email,
+      };
       console.log('[mockApi.login] session returned:', session);
       return session;
     },
@@ -281,7 +312,16 @@ const mockApiImpl: ApiClient = {
     async getSession() {
       await delay();
       const rk = getRoleKey();
-      const s = sessionFor(rk);
+      const db = getDatabase();
+      const user = getCurrentUser(db);
+      const s: Session = {
+        roleKey: rk,
+        role: ROLE_LABEL[rk],
+        userName: user?.fullName || ROLE_DISPLAY_NAME[rk],
+        token: 'mock-token',
+        id: String(user?.userId || ''),
+        email: user?.email || '',
+      };
       console.log('[mockApi.getSession] roleKey from store:', rk, 'session:', s);
       return s;
     },
@@ -400,14 +440,30 @@ const mockApiImpl: ApiClient = {
       const content = input.content.trim();
       if (!content) throw new ApiError('VALIDATION', 'Vui lòng nhập nội dung bài đăng.');
 
-      const db = getDatabase();
-      const category = getCategoryByName(db, input.category);
-      if (!category || category.status !== 'Active') {
-        throw new ApiError('VALIDATION', 'Vui lòng chọn danh mục đang hoạt động.');
+      if (!input.items || input.items.length === 0) {
+        throw new ApiError('VALIDATION', 'Cần ít nhất 1 sản phẩm.');
       }
 
-      if (input.type === 'Sale' && (input.price ?? 0) < 0) {
-        throw new ApiError('VALIDATION', 'Giá phải lớn hơn hoặc bằng 0.');
+      const db = getDatabase();
+
+      // Validate all item categories exist and are active
+      const itemCategories = input.items.map((item) => {
+        const cat = getCategoryByName(db, item.category);
+        if (!cat || cat.status !== 'Active') {
+          throw new ApiError('VALIDATION', `Danh mục "${item.category}" không hợp lệ hoặc không hoạt động.`);
+        }
+        return cat;
+      });
+
+      // Use first item's category as post-level category (backward compat)
+      const primaryCategory = itemCategories[0];
+
+      if (input.type === 'Sale') {
+        for (let i = 0; i < input.items.length; i++) {
+          if ((input.items[i].price ?? 0) < 0) {
+            throw new ApiError('VALIDATION', `Giá sản phẩm "${input.items[i].name}" phải >= 0.`);
+          }
+        }
       }
 
       let campaignEntity: CampaignEntity | undefined;
@@ -420,24 +476,35 @@ const mockApiImpl: ApiClient = {
       const uid = currentUserId(db);
       const title =
         input.title?.trim() ||
-        content.split(/[.!?\n]/)[0]?.slice(0, 64) ||
+        (input.items[0]?.name || content.split(/[.!?\n]/)[0]?.slice(0, 64)) ||
         'Bài đăng mới';
-      const price = input.type === 'Sale' ? input.price ?? 0 : 0;
 
-      console.log('[mockApi.createPost] input.imageName:', input.imageName);
+      // Build items array
+      const items = input.items.map((item) => {
+        const itemCat = itemCategories.find((c) => c.categoryName === item.category) || primaryCategory;
+        return {
+          name: item.name,
+          categoryId: itemCat.categoryId,
+          price: input.type === 'Sale' ? item.price : 0,
+          condition: item.condition,
+          image: item.imageName || '',
+        };
+      });
+
       const newProduct: ProductEntity = {
         productId: newProductId(),
         userId: uid,
-        categoryId: category.categoryId,
+        categoryId: primaryCategory.categoryId,
         title,
         description: content,
-        image: input.imageName || 'POST',
-        price,
+        image: items[0]?.image || 'POST',
+        price: items[0]?.price ?? 0,
         type: input.type,
         status: 'Pending Approval',
         contact: input.contact,
         campaignId: campaignEntity?.campaignId,
         createdAt: todayIso(),
+        items,
       };
 
       updateDatabase((nextDb) => {
@@ -471,13 +538,6 @@ const mockApiImpl: ApiClient = {
         const product = nextDb.products.find((p) => p.productId === pid);
         if (!product) return;
 
-        if (input.category !== undefined) {
-          const cat = getCategoryByName(nextDb, input.category);
-          if (!cat || cat.status !== 'Active') {
-            throw new ApiError('VALIDATION', 'Vui lòng chọn danh mục đang hoạt động.');
-          }
-          product.categoryId = cat.categoryId;
-        }
         if (input.title !== undefined) product.title = input.title.trim() || product.title;
         if (input.content !== undefined) {
           const c = input.content.trim();
@@ -486,7 +546,28 @@ const mockApiImpl: ApiClient = {
         }
         if (input.contact !== undefined) product.contact = input.contact;
         if (input.type !== undefined) product.type = input.type;
-        if (input.imageName !== undefined) product.image = input.imageName;
+
+        if (input.items !== undefined && input.items.length > 0) {
+          // Map items with categoryId lookups
+          product.items = input.items.map((item) => {
+            const cat = getCategoryByName(nextDb, item.category);
+            if (!cat || cat.status !== 'Active') {
+              throw new ApiError('VALIDATION', `Danh mục "${item.category}" không hợp lệ.`);
+            }
+            return {
+              name: item.name,
+              categoryId: cat.categoryId,
+              price: input.type === 'Sale' ? item.price : 0,
+              condition: item.condition,
+              image: item.imageName || '',
+            };
+          });
+          // Update backward-compat fields from first item
+          const firstItem = product.items[0];
+          product.categoryId = firstItem.categoryId;
+          product.price = firstItem.price;
+          product.image = firstItem.image || product.image;
+        }
 
         if (input.campaignId !== undefined) {
           if (input.campaignId) {
@@ -499,12 +580,9 @@ const mockApiImpl: ApiClient = {
           }
         }
 
-        if (product.type === 'Sale') {
-          const nextPrice = input.price ?? product.price;
-          if (nextPrice < 0) throw new ApiError('VALIDATION', 'Giá phải lớn hơn hoặc bằng 0.');
-          product.price = nextPrice;
-        } else {
+        if (product.type !== 'Sale') {
           product.price = 0;
+          product.items = product.items.map((item) => ({ ...item, price: 0 }));
         }
 
         product.status = 'Pending Approval';
@@ -874,6 +952,11 @@ const mockApiImpl: ApiClient = {
           throw new ApiError('CONFLICT', 'Chỉ có thể hoàn tất yêu cầu đang Accepted.');
         }
 
+        // Sale / Purchase must go through the payment flow
+        if (request.type === 'Purchase') {
+          throw new ApiError('INVALID_STATE', 'Giao dịch mua phải được thanh toán qua trang Checkout.');
+        }
+
         request.status = 'Completed';
         updated = request;
 
@@ -1138,6 +1221,13 @@ const mockApiImpl: ApiClient = {
         campaignId: campaign.campaignId,
         contact: sourceProduct?.contact ?? 'an@student.school.edu',
         createdAt: todayIso(),
+        items: sourceProduct?.items ?? [{
+          name: sourceProduct?.title ?? 'Campaign post mới',
+          categoryId: sourceProduct?.categoryId ?? 5,
+          price: sourceProduct?.type === 'Sale' ? sourceProduct.price : 0,
+          condition: 'used_good' as const,
+          image: sourceProduct?.image ?? input.imageName ?? 'POST',
+        }],
       };
 
       updateDatabase((nextDb) => {
@@ -1531,6 +1621,204 @@ const mockApiImpl: ApiClient = {
       const result: CampaignStatsReport = { campaigns };
 
       return result;
+    },
+  },
+
+  // -----------------------------------------------------------------------
+  // payments
+  // -----------------------------------------------------------------------
+  payments: {
+    async checkout(requestId: string) {
+      await delay();
+      assertMemberRole();
+
+      const rid = toEntityRequestId(requestId);
+      if (Number.isNaN(rid)) throw new ApiError('NOT_FOUND', `Không tìm thấy yêu cầu: ${requestId}`);
+
+      const db = getDatabase();
+      const request = db.requests.find((r) => r.requestId === rid);
+      if (!request) throw new ApiError('NOT_FOUND', `Không tìm thấy yêu cầu: ${requestId}`);
+
+      const uid = currentUserId(db);
+      if (request.senderId !== uid) {
+        throw new ApiError('FORBIDDEN', 'Bạn không có quyền thanh toán yêu cầu này.');
+      }
+
+      if (request.type !== 'Purchase') {
+        throw new ApiError('INVALID_STATE', 'Chỉ có thể thanh toán yêu cầu mua hàng.');
+      }
+
+      if (request.status !== 'Accepted') {
+        throw new ApiError('INVALID_STATE', 'Yêu cầu phải được chấp nhận trước khi thanh toán.');
+      }
+
+      const product = getProductById(db, request.productId);
+      if (!product) throw new ApiError('NOT_FOUND', 'Không tìm thấy sản phẩm.');
+
+      const buyer = getUserById(db, request.senderId);
+      const seller = getUserById(db, request.receiverId);
+
+      const productPrice = product.price;
+      const fee = computeFee(productPrice);
+      const sellerReceives = productPrice - fee;
+
+      const checkoutSession: CheckoutSession = {
+        requestId: toRequestId(request.requestId),
+        productName: product.title,
+        productPrice,
+        fee,
+        total: productPrice,
+        sellerReceives: sellerReceives > 0 ? sellerReceives : 0,
+        paymentMethods: ['simulated'],
+        buyerName: buyer?.fullName ?? '',
+        sellerName: seller?.fullName ?? '',
+      };
+
+      return checkoutSession;
+    },
+
+    async confirm(requestId: string, paymentMethod: string) {
+      await delay();
+      assertMemberRole();
+
+      if (!['simulated'].includes(paymentMethod)) {
+        throw new ApiError('VALIDATION', `Phương thức thanh toán không được hỗ trợ: ${paymentMethod}`);
+      }
+
+      const rid = toEntityRequestId(requestId);
+      if (Number.isNaN(rid)) throw new ApiError('NOT_FOUND', `Không tìm thấy yêu cầu: ${requestId}`);
+
+      const db = getDatabase();
+      const request = db.requests.find((r) => r.requestId === rid);
+      if (!request) throw new ApiError('NOT_FOUND', `Không tìm thấy yêu cầu: ${requestId}`);
+
+      const uid = currentUserId(db);
+      if (request.senderId !== uid) {
+        throw new ApiError('FORBIDDEN', 'Bạn không có quyền thanh toán yêu cầu này.');
+      }
+
+      if (request.type !== 'Purchase') {
+        throw new ApiError('INVALID_STATE', 'Chỉ có thể thanh toán yêu cầu mua hàng.');
+      }
+
+      if (request.status !== 'Accepted') {
+        throw new ApiError('INVALID_STATE', 'Yêu cầu phải được chấp nhận trước khi thanh toán.');
+      }
+
+      // Check if already paid (idempotency)
+      const existingTx = db.transactions.find(
+        (t) => t.productId === request.productId
+          && t.buyerId === request.senderId
+          && t.sellerId === request.receiverId
+          && t.status === 'Completed'
+      );
+      if (existingTx) {
+        return {
+          transactionId: String(existingTx.transactionId),
+          status: 'paid' as const,
+          amount: existingTx.amount,
+          fee: existingTx.fee,
+          paymentMethod: paymentMethod as PaymentResult['paymentMethod'],
+          paymentDate: existingTx.createdAt,
+        };
+      }
+
+      const product = getProductById(db, request.productId);
+      if (!product) throw new ApiError('NOT_FOUND', 'Không tìm thấy sản phẩm.');
+
+      let updated: RequestEntity | undefined;
+      let paymentResult: PaymentResult | undefined;
+
+      updateDatabase((nextDb) => {
+        const req = nextDb.requests.find((r) => r.requestId === rid);
+        if (!req) return;
+        if (req.status !== 'Accepted') {
+          throw new ApiError('INVALID_STATE', 'Yêu cầu phải được chấp nhận trước khi thanh toán.');
+        }
+
+        req.status = 'Completed';
+        updated = req;
+
+        const prod = nextDb.products.find((p) => p.productId === request.productId);
+        const fee = prod ? computeFee(prod.price) : 0;
+        const now = todayIso();
+
+        const transaction: TransactionEntity = {
+          transactionId: newTransactionId(),
+          productId: request.productId,
+          sellerId: request.receiverId,
+          buyerId: request.senderId,
+          transactionType: 'Sale',
+          amount: prod?.price ?? 0,
+          fee,
+          status: 'Completed',
+          createdAt: now,
+        };
+        nextDb.transactions.unshift(transaction);
+
+        if (fee > 0) {
+          const feeEntity: FeeEntity = {
+            feeId: newFeeId(),
+            transactionId: transaction.transactionId,
+            amount: fee,
+            note: `5% phí giao dịch từ sản phẩm "${prod?.title ?? 'N/A'}"`,
+            createdAt: now,
+          };
+          nextDb.fees.unshift(feeEntity);
+        }
+
+        if (prod && prod.status === 'Approved') {
+          prod.status = 'Completed';
+        }
+
+        paymentResult = {
+          transactionId: String(transaction.transactionId),
+          status: 'paid',
+          amount: transaction.amount,
+          fee: transaction.fee,
+          paymentMethod: paymentMethod as PaymentResult['paymentMethod'],
+          paymentDate: now,
+          productName: prod?.title ?? '',
+        };
+      });
+
+      if (!updated) throw new ApiError('NOT_FOUND', `Không tìm thấy yêu cầu: ${requestId}`);
+      return paymentResult!;
+    },
+
+    async getHistory() {
+      await delay();
+      const roleKey = getRoleKey();
+      if (roleKey !== 'member' && roleKey !== 'system-admin') {
+        throw new ApiError('FORBIDDEN', 'Chức năng này không khả dụng.');
+      }
+
+      const db = getDatabase();
+      let transactions = db.transactions.filter((t) => t.transactionType === 'Sale');
+
+      if (roleKey === 'member') {
+        const uid = currentUserId(db);
+        transactions = transactions.filter(
+          (t) => t.sellerId === uid || t.buyerId === uid,
+        );
+      }
+
+      return transactions.map((t) => {
+        const buyer = getUserById(db, t.buyerId);
+        const seller = getUserById(db, t.sellerId);
+        const product = getProductById(db, t.productId);
+        return {
+          transactionId: String(t.transactionId),
+          status: 'paid' as const,
+          amount: t.amount,
+          fee: t.fee,
+          paymentMethod: 'simulated' as PaymentResult['paymentMethod'],
+          paymentDate: t.createdAt,
+          productName: product?.title ?? '',
+          buyerName: buyer?.fullName ?? '',
+          sellerName: seller?.fullName ?? '',
+        };
+      });
     },
   },
 };

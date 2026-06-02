@@ -17,6 +17,7 @@ import type {
   TransactionStats,
   CampaignStatsReport,
 } from '@/lib/types/report';
+import type { CheckoutSession, PaymentResult } from '@/lib/types/payment';
 
 // ---------------------------------------------------------------------------
 // ApiError
@@ -28,7 +29,8 @@ export type ApiErrorCode =
   | 'FORBIDDEN'
   | 'NOT_FOUND'
   | 'CONFLICT'
-  | 'VALIDATION';
+  | 'VALIDATION'
+  | 'INVALID_STATE';
 
 export class ApiError extends Error {
   readonly code: ApiErrorCode;
@@ -96,12 +98,21 @@ export interface PostManagementFilters {
 export interface CreatePostInput {
   title?: string;
   content: string;
-  imageName: string;
+  imageName?: string; // deprecated — images now live on items
   type: TransactionType;
   price?: number;
-  category: string;
+  category?: string; // deprecated — category now lives on items
   contact: string;
   campaignId?: string;
+  items: CreatePostItemInput[];
+}
+
+export interface CreatePostItemInput {
+  name: string;
+  category: string;
+  price: number;
+  condition: 'new' | 'used_good' | 'used_normal' | 'old';
+  imageName: string;
 }
 
 export interface CreateCampaignInput {
@@ -187,5 +198,11 @@ export interface ApiClient {
     getPostStats(): Promise<PostStatsDetail>;
     getTransactionStats(): Promise<TransactionStats>;
     getCampaignStats(): Promise<CampaignStatsReport>;
+  };
+
+  payments: {
+    checkout(requestId: string): Promise<CheckoutSession>;
+    confirm(requestId: string, paymentMethod: string): Promise<PaymentResult>;
+    getHistory(): Promise<PaymentResult[]>;
   };
 }

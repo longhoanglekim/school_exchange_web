@@ -16,6 +16,7 @@ export const MENU_BY_ROLE: Record<RoleKey, MenuItem[]> = {
     { href: '/member/profile', label: 'Hồ sơ' },
   ],
   'system-admin': [
+    { href: '/member/feed', label: 'Bảng tin trường' },
     { href: '/admin/dashboard', label: 'Tổng quan' },
     { href: '/admin/post-approval', label: 'Duyệt bài' },
     { href: '/admin/post-management', label: 'Quản lý bài đăng' },
@@ -25,6 +26,7 @@ export const MENU_BY_ROLE: Record<RoleKey, MenuItem[]> = {
     { href: '/admin/reports', label: 'Báo cáo' },
   ],
   'activity-admin': [
+    { href: '/member/feed', label: 'Bảng tin trường' },
     { href: '/activity-admin/my-campaigns', label: 'Chiến dịch của tôi' },
     { href: '/activity-admin/create-campaign', label: 'Tạo chiến dịch' },
     { href: '/activity-admin/campaign-posts', label: 'Bài đăng chiến dịch' },
