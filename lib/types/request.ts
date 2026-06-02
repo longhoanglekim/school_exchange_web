@@ -4,7 +4,7 @@
 //   'Donation'  <-> Donation
 export type RequestType = 'Purchase' | 'Exchange' | 'Donation';
 
-export type RequestStatus = 'Pending' | 'Accepted' | 'Rejected' | 'Completed' | 'Cancelled';
+export type RequestStatus = 'Pending' | 'Pending Approval' | 'Accepted' | 'Rejected' | 'Completed' | 'Cancelled';
 
 export interface ProductRequest {
   id: string;                 // 'r1', 'r' + Date.now()
