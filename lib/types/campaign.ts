@@ -7,7 +7,7 @@ export interface Campaign {
   organizer: string;          // đơn vị tổ chức (mặc định 'CLB Green Life')
   type: CampaignType;
   is_free: boolean;           // Free Participation (Yes/No)
-  intermediary_fee?: number; // Phí tham gia (%) — only applies when is_free = false
+  commission_rate?: number; // Phí tham gia (%) — only applies when is_free = false
   start: string;              // ISO date 'YYYY-MM-DD'
   end: string;                // ISO date, phải sau start
   status: CampaignStatus;     // suy ra từ start/end (xem State Models)

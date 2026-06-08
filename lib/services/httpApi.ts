@@ -383,6 +383,7 @@ export const httpApi: ApiClient = {
         description: input.description,
         type: input.type,
         is_free: input.is_free,
+        commission_rate: input.commission_rate,
         start: input.start,
         end: input.end,
       });
@@ -395,6 +396,7 @@ export const httpApi: ApiClient = {
       if (input.description !== undefined) body.description = input.description;
       if (input.type !== undefined) body.type = input.type;
       if (input.is_free !== undefined) body.is_free = input.is_free;
+      if (input.commission_rate !== undefined) body.commission_rate = input.commission_rate;
       if (input.start !== undefined) body.start = input.start;
       if (input.end !== undefined) body.end = input.end;
       return patch<Campaign>(`/api/campaigns/${campaignId}`, body);

@@ -46,7 +46,15 @@ export function CampaignHeader({
           </div>
           <div className="card stat">
             <p>Loại chiến dịch</p>
-            <div className="value">SIE</div>
+            <div className="value">{campaign.type}</div>
+          </div>
+          <div className="card stat">
+            <p>Tham gia</p>
+            <div className="value">
+              {campaign.is_free
+                ? 'Miễn phí'
+                : `${Math.round((campaign.commission_rate ?? 0) * 100)}%`}
+            </div>
           </div>
         </div>
 

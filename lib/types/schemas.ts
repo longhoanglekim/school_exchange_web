@@ -63,7 +63,7 @@ export const createCampaignSchema = z
     description: z.string().optional(),
     type: z.enum(['Fundraising', 'Donation', 'Mixed']),
     is_free: z.boolean(),
-    intermediary_fee: z.number().min(0).max(100, 'Phí tham gia không được vượt quá 100%').optional(),
+    commission_rate: z.number().min(0).max(100, 'Phí tham gia không được vượt quá 100%').optional(),
     start: z.string().min(1, 'Vui lòng chọn ngày bắt đầu.'),
     end: z.string().min(1, 'Vui lòng chọn ngày kết thúc.'),
   })
@@ -77,10 +77,10 @@ export const createCampaignSchema = z
       });
     }
     // Phí tham gia: required when campaign is NOT free
-    if (!data.is_free && (data.intermediary_fee === undefined || data.intermediary_fee < 0)) {
+    if (!data.is_free && (data.commission_rate === undefined || data.commission_rate < 0)) {
       ctx.addIssue({
         code: 'custom',
-        path: ['intermediary_fee'],
+        path: ['commission_rate'],
         message: 'Vui lòng nhập phí tham gia (0-100%).',
       });
     }

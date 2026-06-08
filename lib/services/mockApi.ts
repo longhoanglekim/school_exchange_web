@@ -1081,7 +1081,7 @@ const mockApiImpl: ApiClient = {
         cover: 'GROUP',
         type: input.type,
         isFree: input.is_free,
-        intermediaryFee: input.intermediary_fee ?? 0,
+        commissionRate: input.commission_rate ?? 0,
       };
 
       updateDatabase((nextDb) => {
@@ -1110,7 +1110,7 @@ const mockApiImpl: ApiClient = {
         const nextDescription = input.description !== undefined ? input.description : campaign.description;
         const nextType = input.type ?? campaign.type;
         const nextIsFree = input.is_free ?? campaign.isFree;
-        const nextIntermediaryFee = input.intermediary_fee ?? campaign.intermediaryFee ?? 0;
+        const nextCommissionRate = input.commission_rate ?? campaign.commissionRate ?? 0;
         const nextStart = input.start ?? campaign.startDate;
         const nextEnd = input.end ?? campaign.endDate;
 
@@ -1124,7 +1124,7 @@ const mockApiImpl: ApiClient = {
         campaign.description = nextDescription;
         campaign.type = nextType;
         campaign.isFree = nextIsFree;
-        campaign.intermediaryFee = nextIntermediaryFee;
+        campaign.commissionRate = nextCommissionRate;
         campaign.startDate = nextStart;
         campaign.endDate = nextEnd;
         campaign.status = deriveCampaignStatus(nextStart, nextEnd);

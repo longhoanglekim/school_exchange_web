@@ -164,7 +164,7 @@ const seedCampaigns: CampaignEntity[] = [
     cover: 'SPORT',
     type: 'Fundraising',
     isFree: false,
-    intermediaryFee: 5,
+    commissionRate: 5,
   },
   {
     campaignId: 3,
@@ -180,7 +180,7 @@ const seedCampaigns: CampaignEntity[] = [
     cover: 'GREEN',
     type: 'Mixed',
     isFree: false,
-    intermediaryFee: 2,
+    commissionRate: 2,
   },
 ];
 

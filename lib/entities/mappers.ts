@@ -135,7 +135,7 @@ export function toCampaignView(campaign: CampaignEntity): Campaign {
     organizer: campaign.organizer,
     type: campaign.type,
     is_free: campaign.isFree,
-    intermediary_fee: campaign.intermediaryFee ?? 0,
+    commission_rate: campaign.commissionRate ?? 0,
     start: campaign.startDate,
     end: campaign.endDate,
     status: campaign.status,

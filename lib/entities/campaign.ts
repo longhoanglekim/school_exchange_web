@@ -27,5 +27,5 @@ export interface CampaignEntity {
   cover: string; // mock extension — icon placeholder
   type: CampaignType; // mock extension — Fundraising | Donation | Mixed
   isFree: boolean; // mock extension — Free Participation
-  intermediaryFee?: number; // mock extension — Phí tham gia (%), only meaningful when isFree is false
+  commissionRate?: number; // mock extension — Phí tham gia (%), only meaningful when isFree is false
 }

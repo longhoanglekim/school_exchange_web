@@ -104,20 +104,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="kpi-strip">
-            <div className="kpi">
-              <strong>3 flow</strong>
-              <p>Approval, request, campaign</p>
-            </div>
-            <div className="kpi">
-              <strong>Dữ liệu mẫu</strong>
-              <p>Express + MongoDB</p>
-            </div>
-            <div className="kpi">
-              <strong>Responsive</strong>
-              <p>Desktop, tablet, mobile</p>
-            </div>
-          </div>
+         
         </section>
 
         <section className="login-card">

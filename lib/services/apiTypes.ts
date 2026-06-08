@@ -121,7 +121,7 @@ export interface CreateCampaignInput {
   description: string;
   type: CampaignType;
   is_free: boolean;
-  intermediary_fee?: number;
+  commission_rate?: number;
   start: string;
   end: string;
 }

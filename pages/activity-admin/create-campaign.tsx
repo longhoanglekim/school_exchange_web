@@ -63,7 +63,7 @@ export default function CreateCampaignPage() {
       description: '',
       type: 'Donation',
       is_free: true,
-      intermediary_fee: 0,
+      commission_rate: 0,
       start: todayDate(),
       end: futureDate(20),
     },
@@ -84,7 +84,7 @@ export default function CreateCampaignPage() {
           description: c.description,
           type: c.type,
           is_free: c.is_free,
-          intermediary_fee: c.intermediary_fee ?? 0,
+          commission_rate: c.commission_rate !== undefined ? c.commission_rate * 100 : 0,
           start: c.start,
           end: c.end,
         });
@@ -117,7 +117,7 @@ export default function CreateCampaignPage() {
         description: values.description ?? '',
         type: values.type,
         is_free: values.is_free,
-        intermediary_fee: values.intermediary_fee ?? 0,
+        commission_rate: values.commission_rate !== undefined ? values.commission_rate / 100 : 0,
         start: values.start,
         end: values.end,
       };
@@ -242,16 +242,16 @@ export default function CreateCampaignPage() {
               {!isFree && (
                 <Field
                   label="Phí tham gia (%)"
-                  htmlFor="intermediaryFee"
-                  error={errors.intermediary_fee?.message}
+                  htmlFor="commissionRate"
+                  error={errors.commission_rate?.message}
                 >
                   <Input
-                    id="intermediaryFee"
+                    id="commissionRate"
                     type="number"
                     min="0"
                     max="100"
                     placeholder="5"
-                    {...register('intermediary_fee', { valueAsNumber: true })}
+                    {...register('commission_rate', { valueAsNumber: true })}
                   />
                 </Field>
               )}
